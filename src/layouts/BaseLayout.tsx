@@ -4,6 +4,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { Sun, Moon } from "lucide-react";
 import { ThemeContext } from "../store/ThemeContext";
 import { CartContext } from "../store/CartContext";
+import { useNavigate } from "react-router-dom";
 
 const navItems = [
     {to: "/home", label: "Home"},
@@ -16,6 +17,8 @@ export const BaseLayout = () => {
 
     const {theme, toggleTheme} = useContext(ThemeContext)
     const { totalCount } = useContext(CartContext)
+
+    const navigate = useNavigate();
 
     return (
         <div className="min-h-screen bg-gray-100">
@@ -44,10 +47,12 @@ export const BaseLayout = () => {
 
                     <div className="flex justify-evenly w-40">
                         <div className="relative inline-block">
-                            <ShoppingCart/>
-                            <span className="absolute -top-2 -right-2 text-white bg-red-600 rounded-full h-4 w-4 text-xs flex items-center justify-center shandow-md">
-                                {totalCount}
-                            </span>
+                            <button className="cursor-pointer" onClick={() => {navigate("/cart");}}>
+                                <ShoppingCart/>
+                                <span className="absolute -top-2 -right-2 text-white bg-red-600 rounded-full h-4 w-4 text-xs flex items-center justify-center shandow-md">
+                                    {totalCount}
+                                </span>
+                            </button>
                         </div>
                         <div>
                             <button
