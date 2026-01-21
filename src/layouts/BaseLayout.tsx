@@ -1,6 +1,9 @@
-import { LogOut, Menu } from "lucide-react";
-import { useEffect, useState } from "react"
+import { LogOut, Menu, ShoppingCart } from "lucide-react";
+import { useContext, useEffect, useState } from "react"
 import { NavLink, Outlet } from "react-router-dom";
+import { Sun, Moon } from "lucide-react";
+import { ThemeContext } from "../store/ThemeContext";
+import { CartContext } from "../store/CartContext";
 
 const navItems = [
     {to: "/home", label: "Home"},
@@ -11,9 +14,12 @@ const navItems = [
 export const BaseLayout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    const {theme, toggleTheme} = useContext(ThemeContext)
+    const { totalCount } = useContext(CartContext)
+
     return (
         <div className="min-h-screen bg-gray-100">
-            <header className="bg-white border-b backdrop-blur">
+            <header className="bg-emerald-400 border-b backdrop-blur">
                 <div className="flex h-14 justify-between gap-3 items-center w-full px-6">
                     <div className="flex items-center gap-4">
                         <button
@@ -21,7 +27,7 @@ export const BaseLayout = () => {
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                         <Menu/>
                         </button>
-                        <div className="font-semibold">E Commerce</div>
+                        <div className="font-semibold dark:text-amber-800">E Commerce</div>
                     </div>
                     <nav className="hidden md:flex gap-3">
                         {navItems.map((item) => {
@@ -35,7 +41,21 @@ export const BaseLayout = () => {
                             )
                         })}
                     </nav>
-                    <div className="flex items-center">
+
+                    <div className="flex justify-evenly w-40">
+                        <div className="relative inline-block">
+                            <ShoppingCart/>
+                            <span className="absolute -top-2 -right-2 text-white bg-red-600 rounded-full h-4 w-4 text-xs flex items-center justify-center shandow-md">
+                                {totalCount}
+                            </span>
+                        </div>
+                        <div>
+                            <button
+                                onClick={() => toggleTheme()}
+                            >
+                                {theme === "light" ? <Moon/> : <Sun/>}
+                            </button>
+                        </div>
                         <button>
                             <LogOut/>
                         </button>

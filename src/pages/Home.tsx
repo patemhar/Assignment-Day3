@@ -1,74 +1,38 @@
-import { products } from "../constants/products"
 import Card from "../components/Card"
 import type { productInt } from "../constants/products"
-import { useEffect, useState } from "react"
-import { useForm } from "react-hook-form"
+import { useContext, useEffect, useState } from "react"
+import useFetch from "../hooks/getProducts"
+import { CartContext } from "../store/CartContext"
 
 const Home = () => {
 
-  const [productsList, setProductsList] = useState<productInt[]>(() => {
-    const storedProducts = localStorage.getItem("products");
-    return storedProducts ? JSON.parse(storedProducts) : products;
-  });
-
-  useEffect(() => {
-    localStorage.setItem("products", JSON.stringify(productsList));
-  }, [productsList]);
+  const { addItem, removeItem, totalCount, cartItems} = useContext(CartContext);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("")
-  const [addProductDialogOpen, setAddProductDialog] = useState(false);
 
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setProductsList(products);
-      return;
+  const { data: allProducts, loading: allProductsLoading, error: allProductsError } = useFetch<{ products: productInt[] }>("https://dummyjson.com/products");
+  const { data: searchProducts, loading: searchProductsLoading, error: searchProductsError } = useFetch<{ products: productInt[] }>(searchTerm.trim() ? `https://dummyjson.com/products/search?q=${searchTerm}` : "");
+  const { data: filterProducts, loading: filterProductsLoading, error: filterProductsError } = useFetch<{ products: productInt[] }>(filter.trim() ? `https://dummyjson.com/products/category/${filter}` : "");
+  const { data: categories } = useFetch<string[]>("https://dummyjson.com/products/category-list"); 
+
+  // console.log(`all: ${allProducts?.products}`);
+  // console.log(`search: ${searchProducts?.products}`);
+  // console.log(`filter: ${filterProducts?.products}`);
+
+  function getDisplayData() {
+    if(searchTerm.trim() !== "") {
+      return { data: searchProducts, loading: searchProductsLoading, error: searchProductsError};
+    } else if(filter.trim() !== "") {
+      return { data: filterProducts, loading: filterProductsLoading, error: filterProductsError};
+    } else {
+      return { data: allProducts, loading: allProductsLoading, error: allProductsError};
     }
-    const term = searchTerm.toLowerCase();
-    setProductsList(
-      products.filter((p) =>
-        (p.title && p.title.toLowerCase().includes(term)) ||
-        (p.description && p.description.toLowerCase().includes(term))
-      )
-    );
-  }, [searchTerm])
-
-  useEffect(() => {
-    if (!filter.trim()) {
-      setProductsList(products);
-      return;
-    }
-    setProductsList(products.filter((p) => p.category === filter));
-  }, [filter]);
-
-  type addProductFormValues = {
-    id: number,
-    title: string,
-    price: number,
-    description: string,
-    image: string,
-    stock: number,
-    category: string
   }
 
-  const {register, handleSubmit, reset, formState: { errors }} = useForm<addProductFormValues>({
-    defaultValues: {
-      id: 0,
-      title: "",
-      price: 0,
-      description: "",
-      image: "",
-      stock: 0,
-      category: ""
-    }
-  })
+  const {data: displayData, loading, error} = getDisplayData();
 
-  function handleDelete(id: number) {
-    if(!id) {
-      return;
-    }
-    setProductsList(products.filter((p) => p.id !== id));
-  }
+  // console.log(`display data: ${displayData}`);
 
   return (
     <div className="p-4 flex flex-col justify-center">
@@ -80,7 +44,7 @@ const Home = () => {
         onChange={(e) => setSearchTerm(e.target.value)}
       />
 
-      <div className="flex justify-between mt-2 mx-1">
+      <div className="flex mt-2 mx-1">
         <label >
           Filter:
           <select
@@ -89,110 +53,25 @@ const Home = () => {
             className="mt-2 rounded-lg bg-white/80 p-1"
           >
             <option value="" >All</option>
-            <option value="men's clothing">Men's clothing</option>
-            <option value="electronics">Electronics</option>
-            <option value="women's clothing">Women's clothing</option>
-            <option value="jwellery">Jwellery</option>
+            {categories && categories.map((category) => {
+              return <option key={category} value={category}>{category}</option>
+            })}
           </select>
         </label>
-
-        <button 
-          onClick={() => setAddProductDialog(!addProductDialogOpen)}
-          className="bg-white p-1 rounded-lg px-4"  
-        >
-          Add Product
-        </button>
       </div>
-      
-      { addProductDialogOpen && (
-        <form 
-          onSubmit={handleSubmit((data) => {
-            setProductsList([...productsList, data]);
-            setAddProductDialog(false);
-            reset(); 
-          })} 
-          className="grid md:grid-cols-2 gap-4 rounded-md bg-white p-4 mt-4"
-        >
-          <label htmlFor="id">Id: </label>
-          <input
-            id="id"
-            type="number"
-            placeholder="eg. 12"
-            {...register("id", {required: "ID is required"})}
-            className="border rounded p-2"
-          />
-          {errors.id && <p className="text-red-500">{errors.id.message}</p>}
-          
-          <label htmlFor="title">Title: </label>
-          <input
-            id="title"
-            type="text"
-            placeholder="Product title"
-            {...register("title", {required: "Title is required"})}
-            className="border rounded p-2"
-          />
-          {errors.title && <p className="text-red-500">{errors.title.message}</p>}
-          
-          <label htmlFor="price">Price: </label>
-          <input
-            id="price"
-            type="number"
-            placeholder="Price"
-            {...register("price", {required: "Price is required"})}
-            className="border rounded p-2"
-          />
-          {errors.price && <p className="text-red-500">{errors.price.message}</p>}
-          
-          <label htmlFor="description">Description: </label>
-          <input
-            id="description"
-            type="text"
-            placeholder="Description"
-            {...register("description", {required: "Description is required"})}
-            className="border rounded p-2"
-          />
-          {errors.description && <p className="text-red-500">{errors.description.message}</p>}
-          
-          <label htmlFor="image">Image Url: </label>
-          <input
-            id="image"
-            type="text"
-            placeholder="Image URL"
-            {...register("image", {required: "Image URL is required"})}
-            className="border rounded p-2"
-          />
-          {errors.image && <p className="text-red-500">{errors.image.message}</p>}
-          
-          <label htmlFor="stock">Stock: </label>
-          <input
-            id="stock"
-            type="number"
-            placeholder="Stock"
-            {...register("stock", {required: "Stock is required"})}
-            className="border rounded p-2"
-          />
-          {errors.stock && <p className="text-red-500">{errors.stock.message}</p>}
-          
-          <label htmlFor="category">Category: </label>
-          <input
-          id="category"
-            type="text"
-            placeholder="Category"
-            {...register("category", {required: "Category is required"})}
-            className="border rounded p-2"
-          />
-          {errors.category && <p className="text-red-500">{errors.category.message}</p>}
-          
-          <button type="submit" className="col-span-2 bg-blue-500 text-white p-2 rounded">Add Product</button>
-        </form>
-      )}
 
       <div className="grid sm:grid-cols-3 gap-4 p-5">
-        {productsList.map((product) => {
-          return (
-            <Card key={product.id} {...product} onDelete={handleDelete}/>
-          )
-        })}
+        {loading && <div><span className="animate-spin p-2"></span>Loading...</div>}
+
+        {error && <div>{error.message}</div>}
+
+        {!loading && displayData?.products && displayData.products.length > 0 ? (
+          displayData.products.map((product) => (
+            <Card key={product.id} {...product} addItem={addItem} removeItem={removeItem}/>
+          ))
+        ) : !loading ? (
+          <p>No Data</p>
+        ) : null}
       </div>
 
     </div>    
