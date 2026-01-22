@@ -17,8 +17,6 @@ export default function useFetch<T>(url: string) {
         setLoading(true);
         setError(null);
 
-        let isMounted = true;
-
         async function fetchData() {
             try {
                 const res = await fetch(url);
@@ -27,19 +25,15 @@ export default function useFetch<T>(url: string) {
             
                 const json = await res.json();
     
-                if(isMounted) setData(json);
+                setData(json);
             } catch (error) {
-                if(isMounted) setError(error as Error);
+                setError(error as Error);
             } finally {
-                if(isMounted) setLoading(false);
+                setLoading(false);
             }
         }
 
         fetchData();
-
-        return () => {
-            isMounted = false;
-        }
     }, [url]);
 
     return {data, loading, error};
